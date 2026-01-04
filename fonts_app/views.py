@@ -1,17 +1,24 @@
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from .models import FontFacePrice
 from .serializers import FontFacePriceSerializer
 
-class GetFont(APIView):
-    def get(self, request, pk_font):
-        model = FontFacePrice.objects.filter(face__font__pk=pk_font)
-        serializer = FontFacePriceSerializer(model, many=True)
-        return Response(serializer.data)
+
+class GetFont(ListAPIView):
+    model = FontFacePrice
+    serializer_class = FontFacePriceSerializer
+
+    def get_queryset(self):
+        pk_font = self.kwargs["pk_font"]
+        return FontFacePrice.objects.select_related(
+            "face__font",
+            "face__style",
+        ).filter(face__font__pk=pk_font)
 
 
 class AllFont(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
-    queryset = FontFacePrice.objects.all()
+    queryset = FontFacePrice.objects.select_related(
+        "face__font",
+        "face__style",
+    ).all()
