@@ -1,0 +1,21 @@
+from rest_framework import serializers
+from .models import FontFacePrice, FontFace
+
+
+class FontFaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FontFace
+        fields = '__all__'
+
+
+class FontFacePriceSerializer(serializers.ModelSerializer):
+    font_name = serializers.CharField(source="face.font.name", read_only=True)
+    font_author = serializers.CharField(source="face.font.author", read_only=True)
+    font_date_release = serializers.CharField(source="face.font.date_release", read_only=True)
+    font_desc = serializers.CharField(source="face.font.desc", read_only=True)
+
+    style_name = serializers.CharField(source="face.style.name", read_only=True)
+
+    class Meta:
+        model = FontFacePrice
+        fields = "__all__"

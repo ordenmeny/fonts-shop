@@ -83,7 +83,7 @@ class FontFacePrice(models.Model):
     currency = models.CharField(max_length=16, default="Руб")
 
     def __str__(self):
-        return f"{self.face} для {self.license_type}"
+        return f"{self.face} на {self.license_type} за {self.price}{self.currency}"
 
     class Meta:
         verbose_name = "Стоимость лицензии начертания шрифта"
@@ -105,16 +105,16 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="items")
-    font_face = models.ForeignKey("FontFace", on_delete=models.CASCADE)
-    font_face_price = models.ForeignKey("FontFacePrice", on_delete=models.CASCADE)
+    # font_face = models.ForeignKey("FontFace", on_delete=models.CASCADE)
+    font_face_with_price = models.ForeignKey("FontFacePrice", on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return f"Заказ {self.order.number}: {self.font_face} для пользователя {self.order.user}"
+        return f"Заказ {self.order.number}: {self.font_face_with_price} для пользователя {self.order.user}"
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["order", "font_face"], name="uniq_order_fontface"
+                fields=["order", "font_face_with_price"], name="uniq_order_fontface"
             )
         ]
 
