@@ -3,11 +3,12 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    Fonts,
-    FontStyles,
-    FontStylePrices,
-    FontOrders,
-    UserOrders,
+    Font,
+    FontStyle,
+    FontFace,
+    FontFacePrice,
+    Order,
+    OrderItem,
 )
 
 
@@ -47,9 +48,9 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(get_user_model(), CustomUserAdmin)
 
-admin.site.register(Fonts)
-admin.site.register(FontStyles)
-admin.site.register(FontStylePrices)
-admin.site.register(FontOrders)
-admin.site.register(UserOrders)
-
+admin.site.register(Font)
+admin.site.register(FontStyle)
+admin.site.register(FontFace)
+admin.site.register(FontFacePrice)
+admin.site.register(Order)
+admin.site.register(OrderItem)

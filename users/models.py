@@ -1,5 +1,9 @@
+import uuid
+
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -14,14 +18,10 @@ class CustomUser(AbstractUser):
         return f"{self.first_name} {self.last_name}"
 
 
-#       order_id     |       product_id
-#   №1 (test_user)   |       №10 (NT Somic)
-
-
-class Fonts(models.Model):
+class Font(models.Model):
     name = models.CharField(max_length=512)
     author = models.CharField(max_length=256, verbose_name="Имя автора", null=True)
-    date_release = models.DateField(auto_now_add=True)
+    date_release = models.DateField(null=True, blank=True)
     desc = models.TextField()
 
     def __str__(self):
@@ -32,7 +32,7 @@ class Fonts(models.Model):
         verbose_name_plural = "Шрифты"
 
 
-class FontStyles(models.Model):
+class FontStyle(models.Model):
     name = models.CharField(
         max_length=512,
         verbose_name="Название начертания",
@@ -47,87 +47,87 @@ class FontStyles(models.Model):
         verbose_name_plural = "Начертания"
 
 
-class FontStylePrices(models.Model):
+class FontFace(models.Model):
     font = models.ForeignKey(
-        "Fonts",
+        "Font",
         on_delete=models.CASCADE,
         help_text="Например, NT Somic",
     )
     style = models.ForeignKey(
-        "FontStyles",
+        "FontStyle",
         on_delete=models.CASCADE,
         help_text="Например, Bold",
     )
 
-    # Для конкретного начертация и шрифта
-    price_for_5_comp = models.IntegerField()
-    price_for_10_comp = models.IntegerField()
-    price_for_20_comp = models.IntegerField()
-
-    price_for_10_web_views = models.IntegerField()
-    price_for_25_web_views = models.IntegerField()
-    price_for_100_web_views = models.IntegerField()
-
-    price_for_1_app = models.IntegerField()
-    price_for_2_app = models.IntegerField()
-    price_for_5_app = models.IntegerField()
-
     def __str__(self):
-        return f'{self.style} ({self.font})'
+        return f"{self.font} {self.style}"
 
     class Meta:
-        verbose_name = "Цены начертания шрифта"
-        verbose_name_plural = "Цены начертания шрифта"
+        constraints = [
+            models.UniqueConstraint(fields=["font", "style"], name="uniq_font_style"),
+        ]
+        verbose_name = "Начертание конкретного шрифта"
+        verbose_name_plural = "Начертания конкретного шрифта"
 
 
-class FontOrders(models.Model):
-    id_order = models.CharField(default="AF-123")
+class LicenseType(models.TextChoices):
+    DESKTOP5 = "desktop5", "Десктоп до 5 компьютеров"
+    DESKTOP10 = "desktop10", "Десктоп до 10 компьютеров"
+    DESKTOPMORE10 = "desktopmore10", "Десктоп больше 10 компьютеров"
 
-    user = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.SET_NULL,
-        null=True,
+    APP1 = "app1", "1 приложение"
+    APP2 = "app2", "2 приложение"
+    APP5 = "app5", "5 приложений"
+    APPMORE5 = "appmore5", "Больше 5 приложений"
+
+
+class FontFacePrice(models.Model):
+    face = models.ForeignKey("FontFace", on_delete=models.CASCADE)
+    license_type = models.CharField(max_length=128, choices=LicenseType.choices)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+        ],
     )
-    font = models.ForeignKey(
-        "Fonts",
-        on_delete=models.SET_NULL,
-        help_text="Например, NT Somic",
-        null=True,
-    )
-    style = models.ForeignKey(
-        "FontStyles",
-        on_delete=models.CASCADE,
-        help_text="Например, Bold",
-    )
-    price = models.ForeignKey(
-        "FontStylePrices",
-        on_delete=models.SET_NULL,
-        null=True,
-    )  # OneToOneField?
-
-    fields = ...
+    currency = models.CharField(max_length=16, default="Руб")
 
     def __str__(self):
-        return f'Покупка {self.font} {self.style}'
+        return f"{self.face} для {self.license_type}"
 
     class Meta:
-        verbose_name = "Все заказы"
-        verbose_name_plural = "Все заказы"
+        verbose_name = "Стоимость лицензии начертания шрифта"
+        verbose_name_plural = "Стоимости лицензий начертания шрифта"
 
 
-class UserOrders(models.Model):
-    user = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.SET_NULL,
-        null=True,
-    )
-
-    fonts = models.ManyToManyField("FontOrders")
+class Order(models.Model):
+    number = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Заказ пользователя {self.user}'
+        return f"Заказ от {self.created_at} №{self.number} пользователя {self.user}"
 
     class Meta:
-        verbose_name = "Заказы пользователей"
-        verbose_name_plural = "Заказы пользователей"
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
 
+
+class OrderItem(models.Model):
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="items")
+    font_face = models.ForeignKey("FontFace", on_delete=models.CASCADE)
+    font_face_price = models.ForeignKey("FontFacePrice", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Заказ {self.order.number}: {self.font_face} для пользователя {self.order.user}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "font_face"], name="uniq_order_fontface"
+            )
+        ]
+
+        verbose_name = "Элемент заказа"
+        verbose_name_plural = "Элементы заказов"
