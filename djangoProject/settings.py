@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "rest_framework_simplejwt.token_blacklist",
+    "fonts_app",
 ]
 
 MIDDLEWARE = [
