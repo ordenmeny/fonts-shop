@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FontFacePrice, Font
+from .models import FontFacePrice, Font, Cart
 
 
 class FontSerializer(serializers.ModelSerializer):
@@ -31,4 +31,12 @@ class FontFacePriceSerializer(serializers.ModelSerializer):
 class StylesAndLicensesSerializer(serializers.ModelSerializer):
     class Meta:
         model = FontFacePrice
+        fields = "__all__"
+
+
+class CartSerializer(serializers.Serializer):
+    items = FontFacePriceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Cart
         fields = "__all__"

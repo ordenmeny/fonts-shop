@@ -1,12 +1,12 @@
 import uuid
 
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import FontFacePrice, Cart, Font
-from .serializers import FontFacePriceSerializer, FontSerializer
+from .serializers import FontFacePriceSerializer, FontSerializer, CartSerializer
 
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -18,13 +18,13 @@ def csrf(request):
     return JsonResponse({"detail": "CSRF cookie set"})
 
 
-class AllFonts(ListAPIView):
+class AllFontsView(ListAPIView):
     model = Font
     serializer_class = FontSerializer
     queryset = Font.objects.all()
 
 
-class GetFontLicenses(ListAPIView):
+class GetFontLicensesView(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
 
@@ -36,7 +36,7 @@ class GetFontLicenses(ListAPIView):
         ).filter(face__font__pk=pk_font)
 
 
-class AllLicenses(ListAPIView):
+class AllLicensesView(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
     queryset = FontFacePrice.objects.select_related(
@@ -45,7 +45,7 @@ class AllLicenses(ListAPIView):
     ).all()
 
 
-class GetLicensesByStyle(ListAPIView):
+class GetLicensesByStyleView(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
 
@@ -57,7 +57,7 @@ class GetLicensesByStyle(ListAPIView):
         ).filter(face__style__pk=pk_face)
 
 
-class AddToCart(APIView):
+class AddToCartView(APIView):
     model = Cart
 
     def post(self, request, pk_item):
@@ -108,3 +108,23 @@ class AddToCart(APIView):
         )
 
         return response
+
+
+class CartView(APIView):
+    model = Cart
+    serializer_class = CartSerializer
+
+    def get(self, request):
+        user = request.user
+        cart_id_from_cookies = request.COOKIES.get("cart_id")
+
+        cart = None
+        if user.is_authenticated:
+            cart = self.model.objects.filter(user=user).first()
+
+        if cart_id_from_cookies and cart is None:
+            cart = self.model.objects.filter(pk=cart_id_from_cookies).first()
+
+        data = self.serializer_class(cart)
+
+        return Response(data.data, status=status.HTTP_200_OK)
