@@ -106,7 +106,9 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="items")
     # font_face = models.ForeignKey("FontFace", on_delete=models.CASCADE)
-    font_face_with_price = models.ForeignKey("FontFacePrice", on_delete=models.CASCADE, null=True)
+    font_face_with_price = models.ForeignKey(
+        "FontFacePrice", on_delete=models.CASCADE, null=True
+    )
 
     def __str__(self):
         return f"Заказ {self.order.number}: {self.font_face_with_price} для пользователя {self.order.user}"
@@ -120,3 +122,22 @@ class OrderItem(models.Model):
 
         verbose_name = "Элемент заказа"
         verbose_name_plural = "Элементы заказов"
+
+
+class Cart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        get_user_model(),
+        null=True,
+        blank=True,
+        related_name="carts",
+        on_delete=models.CASCADE,
+    )
+    items = models.ManyToManyField("FontFacePrice", blank=True)
+
+    def __str__(self):
+        return f'Корзина №{self.id} для {self.user if self.user else "анонимного пользователя"}'
+
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Корзины"

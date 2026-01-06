@@ -19,3 +19,9 @@ class FontFacePriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = FontFacePrice
         fields = "__all__"
+
+
+class StylesAndLicensesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FontFacePrice
+        fields = "__all__"

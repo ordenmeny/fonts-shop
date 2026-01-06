@@ -7,6 +7,7 @@ from .models import (
     FontFacePrice,
     Order,
     OrderItem,
+    Cart,
 )
 
 admin.site.register(Font)
@@ -15,3 +16,4 @@ admin.site.register(FontFace)
 admin.site.register(FontFacePrice)
 admin.site.register(Order)
 admin.site.register(OrderItem)
+admin.site.register(Cart)
