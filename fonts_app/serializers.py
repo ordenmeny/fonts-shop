@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from .models import FontFacePrice, FontFace
+from .models import FontFacePrice, Font
 
 
-class FontFaceSerializer(serializers.ModelSerializer):
+class FontSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FontFace
+        model = Font
         fields = "__all__"
 
 

@@ -134,6 +134,9 @@ class Cart(models.Model):
         on_delete=models.CASCADE,
     )
     items = models.ManyToManyField("FontFacePrice", blank=True)
+    sum = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
 
     def __str__(self):
         return f'Корзина №{self.id} для {self.user if self.user else "анонимного пользователя"}'

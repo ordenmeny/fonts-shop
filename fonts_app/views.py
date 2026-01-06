@@ -5,13 +5,26 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FontFacePrice, Cart
-from .serializers import FontFacePriceSerializer
+from .models import FontFacePrice, Cart, Font
+from .serializers import FontFacePriceSerializer, FontSerializer
 
 from django.conf import settings
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
 
 
-class GetFont(ListAPIView):
+@ensure_csrf_cookie
+def csrf(request):
+    return JsonResponse({"detail": "CSRF cookie set"})
+
+
+class AllFonts(ListAPIView):
+    model = Font
+    serializer_class = FontSerializer
+    queryset = Font.objects.all()
+
+
+class GetFontLicenses(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
 
@@ -23,7 +36,7 @@ class GetFont(ListAPIView):
         ).filter(face__font__pk=pk_font)
 
 
-class AllFont(ListAPIView):
+class AllLicenses(ListAPIView):
     model = FontFacePrice
     serializer_class = FontFacePriceSerializer
     queryset = FontFacePrice.objects.select_related(
@@ -64,8 +77,12 @@ class AddToCart(APIView):
             cart = self.model.objects.filter(pk=cart_id_from_cookies).first()
 
         if cart:
+            if FontFacePrice.objects.get(pk=pk_item) not in cart.items.all():
+                cart.sum += FontFacePrice.objects.get(pk=pk_item).price
+
             cart.items.add(pk_item)
             cart.save()
+
             return response
 
         if user.is_authenticated:
@@ -75,6 +92,9 @@ class AddToCart(APIView):
             )
         else:
             cart = self.model.objects.create(pk=uuid.uuid4())
+
+        if FontFacePrice.objects.get(pk=pk_item) not in cart.items.all():
+            cart.sum += FontFacePrice.objects.get(pk=pk_item).price
 
         cart.items.add(pk_item)
         cart.save()
