@@ -19,7 +19,7 @@ DOCKER_PROJECT = os.getenv("DOCKER_PROJECT", "False") == "True"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["fonts.unimatch.ru"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,7 +70,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "djangoProject.wsgi.application"
 
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -99,19 +98,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 AUTHENTICATION_BACKENDS = [
     "djangoProject.auth_backends.EmailAuthBackend",
     "django.contrib.auth.backends.AllowAllUsersModelBackend",
 ]
-
 
 LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "Asia/Yekaterinburg"
 USE_TZ = True
 USE_I18N = True
-
 
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
@@ -135,7 +131,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
-
 
 DJOSER = {
     "SERIALIZERS": {
@@ -188,24 +183,18 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
-
 CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
+    "https://fonts.unimatch.ru",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-# CORS_ALLOW_ALL_ORIGINS = True
-
 # === CSRF ===
 CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
+    "https://fonts.unimatch.ru",
 ]
 
 SECURE_HTTP_ONLY = True
-
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
