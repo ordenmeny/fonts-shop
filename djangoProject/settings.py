@@ -116,11 +116,11 @@ USE_I18N = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 
-if DOCKER_PROJECT:
-    MEDIA_ROOT = "/vol/web/media"
-    STATIC_ROOT = "/vol/web/static"
-else:
-    MEDIA_ROOT = BASE_DIR / "media_dev"
+# if DOCKER_PROJECT:
+MEDIA_ROOT = "/vol/web/media"
+STATIC_ROOT = "/vol/web/static"
+# else:
+#     MEDIA_ROOT = BASE_DIR / "media_dev"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
