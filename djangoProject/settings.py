@@ -3,23 +3,20 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
+if os.getenv("SETTINGS_TYPE") == "PROD":
+    from djangoProject import prod_settings as custom_settings
+else:
+    from djangoProject import dev_settings as custom_settings
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
-
-yandex_client_id = os.getenv("YANDEX_CLIENT_ID")
-yandex_client_secret = os.getenv("YANDEX_CLIENT_SECRET")
-
-frontend_host = os.getenv("FRONTEND_HOST")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
-DOCKER_PROJECT = os.getenv("DOCKER_PROJECT", "False") == "True"
 
-TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN")
-
-ALLOWED_HOSTS = ["fonts.unimatch.ru"]
+ALLOWED_HOSTS = custom_settings.ALLOWED_HOSTS
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -80,14 +77,6 @@ DATABASES = {
         "PORT": "5432",
     }
 }
-# else:
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.sqlite3",
-#             "NAME": BASE_DIR / "db.sqlite3",
-#         }
-#     }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -112,12 +101,8 @@ USE_I18N = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 
-# if DOCKER_PROJECT:
-MEDIA_ROOT = "/vol/web/media"
-STATIC_ROOT = "/vol/web/static"
-# else:
-#     MEDIA_ROOT = BASE_DIR / "media_dev"
-
+MEDIA_ROOT = custom_settings.MEDIA_ROOT
+STATIC_ROOT = custom_settings.STATIC_ROOT
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -183,16 +168,11 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "https://fonts.unimatch.ru",
-]
+CORS_ALLOWED_ORIGINS = custom_settings.CORS_ALLOWED_ORIGINS
 
 CORS_ALLOW_CREDENTIALS = True
-
-# === CSRF ===
-CSRF_TRUSTED_ORIGINS = [
-    "https://fonts.unimatch.ru",
-]
+CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = custom_settings.CSRF_TRUSTED_ORIGINS
 
 SECURE_HTTP_ONLY = True
 
