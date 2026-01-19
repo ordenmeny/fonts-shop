@@ -112,6 +112,12 @@ uv python pin 3.13
 uv sync
 ```
 
+Активация виртуального окружения:
+На MacOS/Linux: 
+source .venv/bin/activate
+На windows:
+.venv\Scripts\activate
+
 5. Выполните миграции:
 
 ```http
