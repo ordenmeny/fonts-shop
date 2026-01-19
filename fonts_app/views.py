@@ -1,12 +1,17 @@
 import uuid
 
 from rest_framework import status
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FontFacePrice, Cart, Font
-from .serializers import FontFacePriceSerializer, FontSerializer, CartSerializer
+from .models import FontFacePrice, Cart, Font, Order, OrderItem
+from .serializers import (
+    FontFacePriceSerializer,
+    FontSerializer,
+    CartSerializer,
+    OrderSerializer,
+)
 
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -61,7 +66,6 @@ class RemoveFromCartView(APIView):
     model = Cart
     serializer_class = CartSerializer
 
-
     def delete(self, request, pk_item):
         user = request.user
         cart_id_from_cookies = request.COOKIES.get("cart_id")
@@ -79,7 +83,6 @@ class RemoveFromCartView(APIView):
         data = self.serializer_class(cart)
 
         return Response(data.data, status=status.HTTP_200_OK)
-
 
 
 class AddToCartView(APIView):
@@ -153,3 +156,50 @@ class CartView(APIView):
         data = self.serializer_class(cart)
 
         return Response(data.data, status=status.HTTP_200_OK)
+
+
+class CartService:
+    model = Cart
+
+    @classmethod
+    def get_cart_object(cls, request):
+        user = request.user
+        cart_id_from_cookies = request.COOKIES.get("cart_id")
+        cart = None
+        if user.is_authenticated:
+            cart = cls.model.objects.filter(user=user).first()
+
+        if cart_id_from_cookies and cart is None:
+            cart = cls.model.objects.filter(pk=cart_id_from_cookies).first()
+
+        return cart
+
+
+class CreateOrderView(APIView):
+    def post(self, request):
+        cart = CartService.get_cart_object(request)
+
+        if cart is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.create(
+            user=cart.user,
+        )
+
+        for item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                font_face_with_price=item,
+            )
+
+        Cart.objects.filter(user=cart.user).delete()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class UserOrdersView(ListAPIView):
+    model = Order
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        return self.model.objects.filter(user=self.request.user)
