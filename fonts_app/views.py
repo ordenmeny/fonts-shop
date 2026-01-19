@@ -1,11 +1,13 @@
 import uuid
+import pandas as pd
+from rest_framework.permissions import IsAdminUser
 
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FontFacePrice, Cart, Font, Order, OrderItem
+from .models import FontFacePrice, Cart, Font, Order, OrderItem, LicenseType
 from .serializers import (
     FontFacePriceSerializer,
     FontSerializer,
@@ -16,6 +18,8 @@ from .serializers import (
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
+
+from .service import CartService
 
 
 @ensure_csrf_cookie
@@ -143,36 +147,11 @@ class CartView(APIView):
     serializer_class = CartSerializer
 
     def get(self, request):
-        user = request.user
-        cart_id_from_cookies = request.COOKIES.get("cart_id")
-
-        cart = None
-        if user.is_authenticated:
-            cart = self.model.objects.filter(user=user).first()
-
-        if cart_id_from_cookies and cart is None:
-            cart = self.model.objects.filter(pk=cart_id_from_cookies).first()
+        cart = CartService.get_cart_object(request)
 
         data = self.serializer_class(cart)
 
         return Response(data.data, status=status.HTTP_200_OK)
-
-
-class CartService:
-    model = Cart
-
-    @classmethod
-    def get_cart_object(cls, request):
-        user = request.user
-        cart_id_from_cookies = request.COOKIES.get("cart_id")
-        cart = None
-        if user.is_authenticated:
-            cart = cls.model.objects.filter(user=user).first()
-
-        if cart_id_from_cookies and cart is None:
-            cart = cls.model.objects.filter(pk=cart_id_from_cookies).first()
-
-        return cart
 
 
 class CreateOrderView(APIView):
@@ -203,3 +182,73 @@ class UserOrdersView(ListAPIView):
 
     def get_queryset(self):
         return self.model.objects.filter(user=self.request.user)
+
+
+class UserOrdersAnalyticsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        qs = (
+            OrderItem.objects.select_related(
+                "order",
+                "font_face_with_price__face__font",
+                "font_face_with_price__face__style",
+            )
+            .filter(order__user=request.user, font_face_with_price__isnull=False)
+            .values(
+                "order__created_at",
+                "font_face_with_price__license_type",
+                "font_face_with_price__price",
+                "font_face_with_price__face__font__name",
+                "font_face_with_price__face__style__name",
+            )
+        )
+
+        df = pd.DataFrame.from_records(qs)
+        if df.empty:
+            return Response(
+                {
+                    "total_items": 0,
+                    "by_font": {},
+                    "by_license": {},
+                    "by_style": {},
+                    "revenue_total": 0,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        license_map = dict(LicenseType.choices)
+        df["license_type_label"] = df["font_face_with_price__license_type"].map(
+            license_map
+        )
+
+        df["price"] = df["font_face_with_price__price"].astype(float)
+        df["font_name"] = df["font_face_with_price__face__font__name"].astype(str)
+        df["style_name"] = df["font_face_with_price__face__style__name"].astype(str)
+
+        by_font = df.groupby("font_name").size().sort_values(ascending=False).to_dict()
+        by_license = (
+            df.groupby("license_type_label")
+            .size()
+            .sort_values(ascending=False)
+            .to_dict()
+        )
+        by_style = (
+            df.groupby("style_name").size().sort_values(ascending=False).to_dict()
+        )
+
+        revenue_total = round(float(df["price"].sum()), 2)
+
+        return Response(
+            {
+                "total_items": int(len(df)),
+                "by_font": by_font,
+                "by_license": by_license,
+                "by_style": by_style,
+                "revenue_total": revenue_total,
+            },
+            status=status.HTTP_200_OK,
+        )
