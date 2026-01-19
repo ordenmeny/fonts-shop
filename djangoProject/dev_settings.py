@@ -9,11 +9,15 @@ STATIC_ROOT = BASE_DIR / "static_dev"
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://fonts.unimatch.ru",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:5173",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://fonts.unimatch.ru",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:5173",
 ]
 
 
