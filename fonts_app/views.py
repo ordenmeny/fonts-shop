@@ -57,6 +57,31 @@ class GetLicensesByStyleView(ListAPIView):
         ).filter(face__style__pk=pk_face)
 
 
+class RemoveFromCartView(APIView):
+    model = Cart
+    serializer_class = CartSerializer
+
+
+    def delete(self, request, pk_item):
+        user = request.user
+        cart_id_from_cookies = request.COOKIES.get("cart_id")
+
+        cart = None
+        if user.is_authenticated:
+            cart = self.model.objects.filter(user=user).first()
+
+        if cart_id_from_cookies and cart is None:
+            cart = self.model.objects.filter(pk=cart_id_from_cookies).first()
+
+        cart.items.remove(pk_item)
+        cart.save()
+
+        data = self.serializer_class(cart)
+
+        return Response(data.data, status=status.HTTP_200_OK)
+
+
+
 class AddToCartView(APIView):
     model = Cart
 
