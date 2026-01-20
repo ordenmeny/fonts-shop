@@ -63,7 +63,7 @@ class GetLicensesByStyleView(ListAPIView):
         return FontFacePrice.objects.select_related(
             "face__font",
             "face__style",
-        ).filter(face__style__pk=pk_face)
+        ).filter(face__pk=pk_face)
 
 
 class RemoveFromCartView(APIView):
